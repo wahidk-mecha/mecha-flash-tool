@@ -32,7 +32,7 @@ const Info = () => {
   }, []);
 
   const handleNext = () => {
-    navigate("/flash")
+    navigate("/flash", { state: { tempPath: info?.temp_path } });
   }
 
   const handleBack = () => {
