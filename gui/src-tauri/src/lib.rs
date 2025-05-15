@@ -147,9 +147,21 @@ async fn flash_async(temp_dir: String) -> Result<(), String> {
 
         std::env::set_current_dir(temp_path).unwrap();
 
+        // TODO: Verify files with manifest
+
         let mut script = script::Script::new(&manifest.packages.script.name)
             .with_image(&manifest.packages.linux.name)
             .with_bootloader(&manifest.packages.uboot.name);
+
+        // Register the notification callback
+        let mut nt_handler = notification::NotificationHandler {
+            total: 0,
+            current: 0,
+            notification_type: 0,
+            last_notification_type: 0,
+            info: String::new(),
+        };
+        notification::register_notification_callback(&mut nt_handler);
 
         script.run_gui().map_err(|e| e.to_string())?;
 
@@ -164,15 +176,6 @@ async fn flash_async(temp_dir: String) -> Result<(), String> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let mut nt_handler = notification::NotificationHandler {
-        total: 0,
-        current: 0,
-        notification_type: 0,
-        last_notification_type: 0,
-        info: String::new(),
-    };
-    notification::register_notification_callback(&mut nt_handler);
-
     tauri::Builder::default()
         .setup(|app| {
             set_app_handle(app.handle().clone());

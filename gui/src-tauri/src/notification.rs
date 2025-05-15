@@ -2,12 +2,37 @@ use std::ffi::c_char;
 use tauri::Emitter;
 use uuu_rs::uuu_notify;
 
+#[derive(Debug)]
 pub struct NotificationHandler {
     pub total: usize,
     pub current: usize,
     pub notification_type: u32,
     pub last_notification_type: u32,
     pub info: String,
+}
+
+impl NotificationHandler {
+    pub fn print(&mut self) {
+        match self.notification_type {
+            uuu_rs::uuu_notify_NOTIFY_TYPE_NOTIFY_TRANS_POS => {
+                // Skip smaller transfer notifications
+                if self.total < 40 {
+                    return;
+                }
+                let progress = self.current * 100 / self.total;
+                println!("\rProgress: {}%", progress);
+            }
+
+            uuu_rs::uuu_notify_NOTIFY_TYPE_NOTIFY_CMD_INFO => {
+                if self.info.is_empty() {
+                    return;
+                }
+
+                print!("{}", self.info);
+            }
+            _ => {}
+        }
+    }
 }
 
 extern "C" fn notification_callback(
@@ -19,15 +44,15 @@ extern "C" fn notification_callback(
         nt_handler.last_notification_type = nt_handler.notification_type;
         nt_handler.notification_type = nt.type_;
         match nt.type_ {
-            uuu_notify_NOTIFY_TYPE_NOTIFY_TRANS_SIZE => {
+            uuu_rs::uuu_notify_NOTIFY_TYPE_NOTIFY_TRANS_SIZE => {
                 nt_handler.total = nt.__bindgen_anon_1.total;
             }
 
-            uuu_notify_NOTIFY_TYPE_NOTIFY_TRANS_POS => {
+            uuu_rs::uuu_notify_NOTIFY_TYPE_NOTIFY_TRANS_POS => {
                 nt_handler.current = nt.__bindgen_anon_1.index;
             }
 
-            uuu_notify_NOTIFY_TYPE_NOTIFY_CMD_INFO => {
+            uuu_rs::uuu_notify_NOTIFY_TYPE_NOTIFY_CMD_INFO => {
                 let c_char_ptr = nt.__bindgen_anon_1.str_ as *const c_char;
                 if c_char_ptr.is_null() {
                     nt_handler.info = String::from("<NULL_INFO>");
@@ -38,6 +63,8 @@ extern "C" fn notification_callback(
             }
             _ => {}
         }
+
+        //     nt_handler.print();
 
         let progess = if nt_handler.total > 0 {
             (nt_handler.current * 100) / nt_handler.total

@@ -51,24 +51,9 @@ header {
 
 .box {
 	border: 2px solid black;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	flex-grow: 1;
-	font-weight: 500;
-	transition: 0.3s;
+
 }
 
-.upload {
-	font-size: 1.5rem;
-}
-
-.upload:hover {
-	cursor: pointer;
-	background-color: #000;
-	color: #fff;
-	transition: 0.3s;
-}
 
 .nav {
 	display: flex;

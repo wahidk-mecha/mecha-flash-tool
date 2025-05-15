@@ -3,6 +3,7 @@ import Button from "./components/Button"
 import { useLocation, useNavigate } from "react-router-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import "./Flash.css";
 
 type Command = {
   command: string;
@@ -15,6 +16,20 @@ type Notification = {
   last_type: number;
 };
 
+function processBackspaces(input: string): string {
+  const result = [];
+  for (const char of input) {
+    if (char === '\b') {
+      if (result.length > 0) {
+        result.pop(); // remove previous char
+      }
+    } else {
+      result.push(char);
+    }
+  }
+  return result.join('');
+}
+
 const Flash = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -24,20 +39,20 @@ const Flash = () => {
 
   const [flashing, setFlashing] = useState(false);
   const [logs, setLogs] = useState("");
-  const [cmds, setCmds] = useState("");
   const [numDevices, setNumDevices] = useState(0);
 
   useEffect(() => {
     const unlistenCmd = listen<Command>("run-command", (event) => {
       const command = event.payload.command;
-      setCmds((prevCmds) => prevCmds + '\n' + command);
+      setLogs((prevLogs) => prevLogs + '\n> ' + command);
     });
 
     const unlistenNotif = listen<Notification>("notification", (event) => {
       const info = event.payload.info;
       const progress = event.payload.progress;
+      console.log(event.payload)
       if (info != "") {
-        setCmds((prevCmds) => prevCmds + '\n' + info);
+        setLogs((prevLogs) => prevLogs + '\n' + info.replace(/\x08/g, ''));
       }
       // Update logs or progress here
       // setLogs((prevLogs) => prevLogs + '\n' + info);
@@ -74,7 +89,9 @@ const Flash = () => {
   }, [numDevices, flashing]);
 
   const handleNext = () => {
-
+    if (numDevices == 0) {
+      getNumDevices();
+    }
   }
 
   const handleBack = () => {
@@ -84,13 +101,13 @@ const Flash = () => {
   return (
     <section className="content">
       <h2>Flashing your device...</h2>
-      <div className="logs box">
+      <div className={"box" + (flashing ? " logs" : " info")}>
         {!flashing ? <h4>{
           numDevices == 0 && "No devices were found. Connect the device in recovery mode and try again."
         }</h4> :
           <h4>
-            {cmds.split("\n").map((line, idx) => (
-              <span key={idx}>
+            {logs.split("\n").map((line, idx) => (
+              <span key={idx} style={{ color: line.startsWith(">") ? "green" : "white" }}>
                 {line}
                 <br />
               </span>

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Button from "./components/Button"
 import { useLocation, useNavigate } from "react-router-dom";
 import { invoke } from "@tauri-apps/api/core";
+import "./Info.css";
 
 interface BuildInfo {
   temp_path: string,
