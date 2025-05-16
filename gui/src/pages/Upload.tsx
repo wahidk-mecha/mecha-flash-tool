@@ -1,8 +1,7 @@
-import Button from "./components/Button"
+import { Button } from "@/components/ui/button"
 import { open } from "@tauri-apps/plugin-dialog"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom";
-import "./Upload.css";
 
 const Upload = () => {
   const navigate = useNavigate();
@@ -36,13 +35,13 @@ const Upload = () => {
   }
 
   return (
-    <section className="content">
-      <h2>Upload the flash image</h2>
-      <div onClick={pickFile} className="upload box">
+    <section className="flex flex-col h-full p-8 gap-8">
+      <div className="text-2xl">Upload the flash image</div>
+      <div onClick={pickFile} className="text-xl border-2 border-black grow flex flex-col items-center justify-center rounded-xl cursor-pointer hover:bg-black hover:text-white transition-colors duration-200">
         {filePath ? "Selected file: " + filePath.split('/').pop() : "Click here to upload (*.zip)"}
       </div>
-      <div className="nav">
-        <Button label="NEXT" onClick={handleNext} disabled={!filePath}></Button>
+      <div className="flex justify-end">
+        <Button onClick={handleNext} disabled={filePath == null}>Next</Button>
       </div>
     </section>
 

@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import Button from "./components/Button"
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { useLocation, useNavigate } from "react-router-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import "./Flash.css";
 
 type Command = {
   command: string;
@@ -38,24 +38,24 @@ const Flash = () => {
   const flashCalled = useRef(false);
 
   const [flashing, setFlashing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
   const [logs, setLogs] = useState("");
   const [numDevices, setNumDevices] = useState(0);
 
   useEffect(() => {
     const unlistenCmd = listen<Command>("run-command", (event) => {
       const command = event.payload.command;
-      setLogs((prevLogs) => prevLogs + '\n> ' + command);
+      setLogs((prevLogs) => prevLogs + '> ' + command + '\n');
     });
 
     const unlistenNotif = listen<Notification>("notification", (event) => {
-      const info = event.payload.info;
+      const info = event.payload.info.trim();
       const progress = event.payload.progress;
       console.log(event.payload)
       if (info != "") {
-        setLogs((prevLogs) => prevLogs + '\n' + info.replace(/\x08/g, ''));
+        setLogs((prevLogs) => prevLogs + info.replace(/\x08/g, '') + '\n');
       }
-      // Update logs or progress here
-      // setLogs((prevLogs) => prevLogs + '\n' + info);
     });
 
     return () => {
@@ -75,6 +75,9 @@ const Flash = () => {
       const result = await invoke("flash_async", { tempDir: tempPath });
     } catch (e) {
       console.error(e);
+      setError("Failed to flash the device.");
+    } finally {
+      setDone(true);
     }
   }
 
@@ -99,24 +102,33 @@ const Flash = () => {
   }
 
   return (
-    <section className="content">
-      <h2>Flashing your device...</h2>
-      <div className={"box" + (flashing ? " logs" : " info")}>
-        {!flashing ? <h4>{
-          numDevices == 0 && "No devices were found. Connect the device in recovery mode and try again."
-        }</h4> :
-          <h4>
+    <section className="flex flex-col h-full p-8 gap-8">
+      <div className="text-2xl">{
+        !flashing &&
+          numDevices == 0 ?
+          "Looking for devices" :
+          "Flashing your device, do not disconnect it."
+      }</div>
+
+      <div className="text-xl border-2 border-black grow flex flex-col justify-center">
+        {!flashing &&
+          numDevices == 0 ?
+          <div className="text-center">
+            No devices found. <br /> Are you sure the device is connected in recovery mode?
+          </div> :
+          <ScrollArea className="grow h-0 font-mono bg-black">
             {logs.split("\n").map((line, idx) => (
-              <span key={idx} style={{ color: line.startsWith(">") ? "green" : "white" }}>
+              <span key={idx} className={line.startsWith(">") ? "text-green-600" : "text-white"}>
                 {line}
                 <br />
               </span>
             ))}
-          </h4>}
+          </ScrollArea>}
       </div>
-      <div className="nav">
-        <Button label={numDevices == 0 ? "RETRY" : "WAIT"} onClick={handleNext} disabled={numDevices == 0 && flashing}></Button>
-        <Button label="BACK" onClick={handleBack} disabled={flashing}></Button>
+      <div className="flex justify-end gap-4">
+        {numDevices == 0 && !flashing && <Button onClick={getNumDevices} className={flashing ? "size-0" : ""}>Retry</Button>}
+        <Button onClick={handleNext} className={done ? "" : "hidden"}>Finish</Button>
+        <Button onClick={handleBack} disabled={flashing}>Back</Button>
       </div>
     </section>
 
