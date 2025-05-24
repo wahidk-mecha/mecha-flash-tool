@@ -4,9 +4,11 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { useLocation, useNavigate } from "react-router-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { Progress } from "@/components/ui/progress";
 
 type Command = {
   command: string;
+  progress: number;
 }
 
 type Notification = {
@@ -41,20 +43,29 @@ const Flash = () => {
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [logs, setLogs] = useState("");
+  const [mainProgress, setMainProgress] = useState(0);
+  const [subProgress, setSubProgress] = useState(0);
   const [numDevices, setNumDevices] = useState(0);
 
   useEffect(() => {
     const unlistenCmd = listen<Command>("run-command", (event) => {
       const command = event.payload.command;
-      setLogs((prevLogs) => prevLogs + '> ' + command + '\n');
+      setLogs((prevLogs) => prevLogs + '\n> ' + command);
+      setMainProgress(event.payload.progress);
     });
 
     const unlistenNotif = listen<Notification>("notification", (event) => {
       const info = event.payload.info.trim();
+      const type = event.payload.type;
       const progress = event.payload.progress;
-      console.log(event.payload)
+      console.log("Notification: ", info, type, progress);
+      if (type == 8) {
+        setSubProgress(progress);
+      } else if (type != 4) {
+        setSubProgress(0);
+      }
       if (info != "") {
-        setLogs((prevLogs) => prevLogs + info.replace(/\x08/g, '') + '\n');
+        setLogs((prevLogs) => prevLogs + '\n' + info.trim().replace(/\x08/g, ''));
       }
     });
 
@@ -109,6 +120,21 @@ const Flash = () => {
           "Looking for devices" :
           "Flashing your device, do not disconnect it."
       }</div>
+
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-4 ">
+          <Progress value={mainProgress} className="w-full bg-gray-400" />
+          <div className="text-xl ml-4">
+            {mainProgress == 100 ? "Done" : Math.floor(mainProgress) + "%"}
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <Progress value={subProgress} className="bg-gray-400" />
+          <div className="text-xl ml-4">
+            {Math.floor(subProgress) + "%"}
+          </div>
+        </div>
+      </div>
 
       <div className="text-xl border-2 border-black grow flex flex-col justify-center">
         {!flashing &&

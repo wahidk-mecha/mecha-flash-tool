@@ -67,9 +67,11 @@ impl Script {
     /// Run the script
     pub fn run_gui(&self) -> Result<(), String> {
         if let Some(app_handle) = crate::GLOBAL_APP_HANDLE.get() {
-            for command in &self.commands {
+            let command_count = self.commands.len();
+            for (i, command) in self.commands.iter().enumerate() {
                 let payload = serde_json::json!({
                     "command": command,
+                    "progress": i as f32 * 100.0 / command_count as f32,
                 });
                 let _ = app_handle.emit("run-command", payload);
                 uuu_rs::run_command(command).map_err(|e| e.to_string())?

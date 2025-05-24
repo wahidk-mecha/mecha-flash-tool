@@ -150,7 +150,7 @@ async fn flash_async(temp_dir: String) -> Result<(), String> {
         // TODO: Verify files with manifest
 
         let mut script = script::Script::new(&manifest.packages.script.name)
-            .with_image(&manifest.packages.linux.name)
+            .with_image(&manifest.packages.rootfs.name)
             .with_bootloader(&manifest.packages.uboot.name);
 
         // Register the notification callback

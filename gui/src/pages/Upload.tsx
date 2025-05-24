@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button"
+import { Progress } from "@/components/ui/progress";
 import { open } from "@tauri-apps/plugin-dialog"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom";
